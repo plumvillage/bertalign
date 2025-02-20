@@ -1,6 +1,14 @@
 import re
-from googletrans import Translator
-from sentence_splitter import SentenceSplitter
+from underthesea import sent_tokenize as split_into_sentences_vi
+
+alphabets= "([A-Za-z])"
+prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
+suffixes = "(Inc|Ltd|Jr|Sr|Co)"
+starters = "(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
+websites = "[.](com|net|org|io|gov|edu|me)"
+digits = "([0-9])"
+multiple_dots = r'\.{2,}'
 
 def clean_text(text):
     clean_text = []
@@ -12,49 +20,61 @@ def clean_text(text):
             line = re.sub('\s+', ' ', line)
             clean_text.append(line)
     return "\n".join(clean_text)
-    
-def detect_lang(text):
-    translator = Translator(service_urls=[
-      'translate.google.com.hk',
-    ])
-    max_len = 200
-    chunk = text[0 : min(max_len, len(text))]
-    lang = translator.detect(chunk).lang
-    if lang.startswith('zh'):
-        lang = 'zh'
-    return lang
 
 def split_sents(text, lang):
     if lang in LANG.SPLITTER:
-        if lang == 'zh':
-            sents = _split_zh(text)
+        if lang == 'vi':
+            return split_into_sentences_vi(text)
+        elif lang == 'en':
+            return split_into_sentences_en(text)
         else:
-            splitter = SentenceSplitter(language=lang)
-            sents = splitter.split(text=text) 
-            sents = [sent.strip() for sent in sents]
-        return sents
+            raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
+    	
     else:
         raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
     
-def _split_zh(text, limit=1000):
-        sent_list = []
-        text = re.sub('(?P<quotation_mark>([。？！](?![”’"\'）])))', r'\g<quotation_mark>\n', text)
-        text = re.sub('(?P<quotation_mark>([。？！]|…{1,2})[”’"\'）])', r'\g<quotation_mark>\n', text)
+#from https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
+def split_into_sentences_en(text: str) -> list[str]:
+    """
+    Split the text into sentences.
 
-        sent_list_ori = text.splitlines()
-        for sent in sent_list_ori:
-            sent = sent.strip()
-            if not sent:
-                continue
-            else:
-                while len(sent) > limit:
-                    temp = sent[0:limit]
-                    sent_list.append(temp)
-                    sent = sent[limit:]
-                sent_list.append(sent)
+    If the text contains substrings "<prd>" or "<stop>", they would lead 
+    to incorrect splitting because they are used as markers for splitting.
 
-        return sent_list
-        
+    :param text: text to be split into sentences
+    :type text: str
+
+    :return: list of sentences
+    :rtype: list[str]
+    """
+    text = " " + text + "  "
+    text = text.replace("\n"," ")
+    text = re.sub(prefixes,"\\1<prd>",text)
+    text = re.sub(websites,"<prd>\\1",text)
+    text = re.sub(digits + "[.]" + digits,"\\1<prd>\\2",text)
+    text = re.sub(multiple_dots, lambda match: "<prd>" * len(match.group(0)) + "<stop>", text)
+    if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
+    text = re.sub("\s" + alphabets + "[.] "," \\1<prd> ",text)
+    text = re.sub(acronyms+" "+starters,"\\1<stop> \\2",text)
+    text = re.sub(alphabets + "[.]" + alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>\\3<prd>",text)
+    text = re.sub(alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>",text)
+    text = re.sub(" "+suffixes+"[.] "+starters," \\1<stop> \\2",text)
+    text = re.sub(" "+suffixes+"[.]"," \\1<prd>",text)
+    text = re.sub(" " + alphabets + "[.]"," \\1<prd>",text)
+    if "”" in text: text = text.replace(".”","”.")
+    if "\"" in text: text = text.replace(".\"","\".")
+    if "!" in text: text = text.replace("!\"","\"!")
+    if "?" in text: text = text.replace("?\"","\"?")
+    text = text.replace(".",".<stop>")
+    text = text.replace("?","?<stop>")
+    text = text.replace("!","!<stop>")
+    text = text.replace("<prd>",".")
+    sentences = text.split("<stop>")
+    sentences = [s.strip() for s in sentences]
+    if sentences and not sentences[-1]: sentences = sentences[:-1]
+    return sentences
+    
+
 def yield_overlaps(lines, num_overlaps):
     lines = [_preprocess_line(line) for line in lines]
     for overlap in range(1, num_overlaps + 1):
@@ -79,31 +99,9 @@ def _preprocess_line(line):
     
 class LANG:
     SPLITTER = {
-        'ca': 'Catalan',
-        'zh': 'Chinese',
-        'cs': 'Czech',
-        'da': 'Danish',
-        'nl': 'Dutch',
         'en': 'English',
-        'fi': 'Finnish',
         'fr': 'French',
-        'de': 'German',
-        'el': 'Greek',
-        'hu': 'Hungarian',
-        'is': 'Icelandic',
-        'it': 'Italian',
-        'lt': 'Lithuanian',
-        'lv': 'Latvian',
-        'no': 'Norwegian',
-        'pl': 'Polish',
-        'pt': 'Portuguese',
-        'ro': 'Romanian',
-        'ru': 'Russian',
-        'sk': 'Slovak',
-        'sl': 'Slovenian',
-        'es': 'Spanish',
-        'sv': 'Swedish',
-        'tr': 'Turkish',
+        'vi': 'Vietnamese',
     }
     ISO = {
 		'aa': 'Afar',
