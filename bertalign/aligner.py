@@ -1,8 +1,13 @@
 import numpy as np
 
-from bertalign import model
-from bertalign.corelib import *
-from bertalign.utils import *
+import csv
+
+from corelib import *
+from utils import *
+from encoder import Encoder
+
+model_name = "LaBSE"
+model = Encoder(model_name)
 
 class Bertalign:
     def __init__(self,
@@ -15,6 +20,8 @@ class Bertalign:
                  margin=True,
                  len_penalty=True,
                  is_split=False,
+                 src_lang=None,
+                 tgt_lang=None,
                ):
         
         self.max_align = max_align
@@ -26,9 +33,7 @@ class Bertalign:
         
         src = clean_text(src)
         tgt = clean_text(tgt)
-        src_lang = detect_lang(src)
-        tgt_lang = detect_lang(tgt)
-        
+
         if is_split:
             src_sents = src.splitlines()
             tgt_sents = tgt.splitlines()
@@ -88,6 +93,15 @@ class Bertalign:
             src_line = self._get_line(bead[0], self.src_sents)
             tgt_line = self._get_line(bead[1], self.tgt_sents)
             print(src_line + "\n" + tgt_line + "\n")
+
+    def write_sents_to_csv(self, file):
+        header = [self.src_lang, self.tgt_lang]
+        with open(file, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(header)
+            for bead in self.result:
+                writer.writerow([self._get_line(bead[0], self.src_sents), self._get_line(bead[1], self.tgt_sents)])
+
 
     @staticmethod
     def _get_line(bead, lines):
