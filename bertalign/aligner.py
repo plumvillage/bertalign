@@ -2,12 +2,15 @@ import numpy as np
 
 import csv
 
-from corelib import *
-from utils import *
-from encoder import Encoder
+from bertalign.corelib import *
+from bertalign.utils import *
+#from bertalign.encoder import EncoderOpenAIEmbeddings
+from bertalign.encoder import Encoder
 
 model_name = "LaBSE"
 model = Encoder(model_name)
+#model_name = "text-embedding-3-small"
+#model = EncoderOpenAIEmbeddings(model_name)
 
 class Bertalign:
     def __init__(self,
