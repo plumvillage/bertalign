@@ -27,6 +27,8 @@ def split_sents(text, lang):
             return split_into_sentences_vi(text)
         elif lang == 'en':
             return split_into_sentences_en(text)
+        elif lang == 'fr':
+            return split_into_sentences_en(text) #TODO: implement French sentence splitter
         else:
             raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
     	
