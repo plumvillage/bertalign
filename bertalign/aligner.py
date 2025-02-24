@@ -5,10 +5,10 @@ import csv
 from bertalign.corelib import *
 from bertalign.utils import *
 #from bertalign.encoder import EncoderOpenAIEmbeddings
-from bertalign.encoder import Encoder
+from bertalign.encoder_local import EncoderLocal
 
 model_name = "LaBSE"
-model = Encoder(model_name)
+model = EncoderLocal(model_name)
 #model_name = "text-embedding-3-small"
 #model = EncoderOpenAIEmbeddings(model_name)
 
