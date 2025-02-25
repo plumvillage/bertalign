@@ -1,15 +1,6 @@
 import re
 from underthesea import sent_tokenize as split_into_sentences_vi
 
-alphabets= "([A-Za-z])"
-prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
-suffixes = "(Inc|Ltd|Jr|Sr|Co)"
-starters = "(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
-acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
-websites = "[.](com|net|org|io|gov|edu|me)"
-digits = "([0-9])"
-multiple_dots = r'\.{2,}'
-
 def clean_text(text):
     clean_text = []
     text = text.strip()
@@ -28,7 +19,7 @@ def split_sents(text, lang):
         elif lang == 'en':
             return split_into_sentences_en(text)
         elif lang == 'fr':
-            return split_into_sentences_en(text) #TODO: implement French sentence splitter
+            return split_into_sentences_fr(text)
         else:
             raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
     	
@@ -49,6 +40,15 @@ def split_into_sentences_en(text: str) -> list[str]:
     :return: list of sentences
     :rtype: list[str]
     """
+    alphabets= "([A-Za-z])"
+    prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
+    suffixes = "(Inc|Ltd|Jr|Sr|Co)"
+    starters = "(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+    acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
+    websites = "[.](com|net|org|io|gov|edu|me)"
+    digits = "([0-9])"
+    multiple_dots = r'\.{2,}'
+    
     text = " " + text + "  "
     text = text.replace("\n"," ")
     text = re.sub(prefixes,"\\1<prd>",text)
@@ -75,6 +75,63 @@ def split_into_sentences_en(text: str) -> list[str]:
     sentences = [s.strip() for s in sentences]
     if sentences and not sentences[-1]: sentences = sentences[:-1]
     return sentences
+
+#todo: see if there is a better way - chatgpt made this for me
+def split_into_sentences_fr(text: str) -> list[str]:
+    """
+    Split the text into sentences in French.
+
+    This function accounts for common French abbreviations, honorifics, 
+    and sentence-ending punctuation to ensure proper sentence splitting.
+
+    :param text: text to be split into sentences
+    :type text: str
+
+    :return: list of sentences
+    :rtype: list[str]
+    """
+    alphabets = "([A-Za-zÀ-ÿ])"
+    prefixes = r"(M|Mme|Mlle|Dr|Pr|St)[.]"
+    suffixes = r"(Inc|Ltd|Jr|Sr|Co)"
+    starters = r"(Il|Elle|Ils|Elles|On|Nous|Vous|Ce|Cela|Mais|Cependant|Toutefois|Car|Puis|Donc|Or|Ainsi|D'ailleurs)"
+    acronyms = r"([A-Z][.][A-Z][.](?:[A-Z][.])?)"
+    websites = r"[.](com|net|org|io|gov|edu|me|fr)"
+    digits = "([0-9])"
+    multiple_dots = r'\.{2,}'
+
+    text = " " + text + "  "
+    text = text.replace("\n", " ")
+    text = re.sub(prefixes, r"\1<prd>", text)
+    text = re.sub(websites, r"<prd>\1", text)
+    text = re.sub(digits + r"[.]" + digits, r"\1<prd>\2", text)
+    text = re.sub(multiple_dots, lambda match: "<prd>" * len(match.group(0)) + "<stop>", text)
+    if "Ph.D" in text: text = text.replace("Ph.D.", "Ph<prd>D<prd>")
+    
+    text = re.sub(r"\s" + alphabets + r"[.] ", r" \1<prd> ", text)
+    text = re.sub(acronyms + r" " + starters, r"\1<stop> \2", text)
+    text = re.sub(alphabets + r"[.]" + alphabets + r"[.]" + alphabets + r"[.]", r"\1<prd>\2<prd>\3<prd>", text)
+    text = re.sub(alphabets + r"[.]" + alphabets + r"[.]", r"\1<prd>\2<prd>", text)
+    text = re.sub(r" " + suffixes + r"[.] " + starters, r" \1<stop> \2", text)
+    text = re.sub(r" " + suffixes + r"[.]", r" \1<prd>", text)
+    text = re.sub(r" " + alphabets + r"[.]", r" \1<prd>", text)
+    
+    # Handle quotes and punctuation
+    text = text.replace(".”", "”.")
+    text = text.replace(".\"", "\".")
+    text = text.replace("!\"", "\"!")
+    text = text.replace("?\"", "\"?")
+    
+    # Mark sentence endings
+    text = text.replace(".", ".<stop>")
+    text = text.replace("?", "?<stop>")
+    text = text.replace("!", "!<stop>")
+    text = text.replace("<prd>", ".")
+    
+    sentences = text.split("<stop>")
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    return sentences
+
     
 
 def yield_overlaps(lines, num_overlaps):
