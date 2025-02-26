@@ -28,6 +28,8 @@ def has_embedding_in_cache(text):
 class EncoderLocal:
     def __init__(self, model_name):
         #self.model = SentenceTransformer(model_name, device="cpu")
+
+        print(f"SentenceTransformer using model: {model_name}")
         self.model = SentenceTransformer(model_name) #autoselect device
         self.model_name = model_name
 
