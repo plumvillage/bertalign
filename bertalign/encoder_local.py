@@ -29,7 +29,7 @@ class EncoderLocal:
     def __init__(self, model_name):
         #self.model = SentenceTransformer(model_name, device="cpu")
 
-        print(f"SentenceTransformer using model: {model_name} (may require download)")
+        print(f"SentenceTransformer using model: {model_name} (may require some time for download)")
         self.model = SentenceTransformer(model_name) #autoselect device
         self.model_name = model_name
 
@@ -45,7 +45,7 @@ class EncoderLocal:
             else:
                 missing_texts.append(text)
 
-        print(f"Found {len(cached_embeddings)} cached embeddings, missing {len(missing_texts)}")
+        print(f"Found {len(cached_embeddings)} cached embeddings, missing {len(missing_texts)} (generating, may take a while)")
         
         # Get embeddings for missing texts
         if missing_texts:
