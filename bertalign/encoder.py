@@ -13,7 +13,7 @@ import concurrent.futures
 import os
 
 from diskcache import Cache
-cache = Cache(os.path.join(os.getenv("GEMS_TOOLS_DATA_PATH"), "data_openai_embeddings_cache_timestamp_sync"))
+cache = Cache(os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_openai_embeddings_cache_timestamp_sync"))
 
 def store_embedding_to_cache(text, embedding):
     text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
