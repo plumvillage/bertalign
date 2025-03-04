@@ -30,7 +30,7 @@ class EncoderLocal:
         #self.model = SentenceTransformer(model_name, device="cpu")
 
         print(f"SentenceTransformer using model: {model_name} (may require some time for download)")
-        self.model = SentenceTransformer(model_name) #autoselect device
+        self.model = SentenceTransformer(model_name, cache_folder=os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_SentenceTransformers_model_cache")) #autoselect device
         self.model_name = model_name
 
     def transform(self, sents, num_overlaps):
