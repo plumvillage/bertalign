@@ -14,19 +14,24 @@ from diskcache import Cache
 cache = Cache(os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_LaBSE_embeddings_cache_timestamp_sync"))
 
 def store_embedding_to_cache(text, embedding):
-    text = text.replace("_", " ") #ignore special characters inserted by chapter parsing
-    text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
+    text = replace_excluded_from_embedding(text)
     cache.set(text, embedding, expire=604800)  # 1 week
 
 def get_embedding_from_cache(text):
-    text = text.replace("_", " ") 
-    text = text.replace(" [CURSOR_POSITION] ", " ")
+    text = replace_excluded_from_embedding(text)
     return cache[text]
 
 def has_embedding_in_cache(text):
-    text = text.replace("_", " ") 
-    text = text.replace(" [CURSOR_POSITION] ", " ")
+    text = replace_excluded_from_embedding(text)
     return text in cache
+
+def replace_excluded_from_embedding(text):
+    text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
+    text = text.replace("[CURSOR_POSITION] ", " ") #start of sentence
+    text = text.replace(" [CURSOR_POSITION]", " ") #end of sentence
+    text = text.replace("_", " ") #ignore special characters inserted by chapter parsing
+    text = text.strip()
+    return text
 
 class EncoderLocal:
     def __init__(self, model_name):
@@ -52,6 +57,8 @@ class EncoderLocal:
         
         # Get embeddings for missing texts
         if missing_texts:
+            for text in missing_texts:
+                print(f"Missing: {replace_excluded_from_embedding(text)}")
             missing_embeddings = self.model.encode(missing_texts)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
