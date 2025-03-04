@@ -11,7 +11,7 @@ from bertalign.utils import yield_overlaps
 import tiktoken
 
 from diskcache import Cache
-cache = Cache(os.path.join(os.getenv("GEMS_TOOLS_DATA_PATH"), "data_LaBSE_embeddings_cache_timestamp_sync"))
+cache = Cache(os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_LaBSE_embeddings_cache_timestamp_sync"))
 
 def store_embedding_to_cache(text, embedding):
     text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
@@ -28,6 +28,8 @@ def has_embedding_in_cache(text):
 class EncoderLocal:
     def __init__(self, model_name):
         #self.model = SentenceTransformer(model_name, device="cpu")
+
+        print(f"SentenceTransformer using model: {model_name} (may require some time for download)")
         self.model = SentenceTransformer(model_name) #autoselect device
         self.model_name = model_name
 
@@ -43,7 +45,7 @@ class EncoderLocal:
             else:
                 missing_texts.append(text)
 
-        print(f"Found {len(cached_embeddings)} cached embeddings, missing {len(missing_texts)}")
+        print(f"Found {len(cached_embeddings)} cached embeddings, missing {len(missing_texts)} (generating, may take a while)")
         
         # Get embeddings for missing texts
         if missing_texts:

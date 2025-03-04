@@ -7,7 +7,7 @@ from bertalign.utils import *
 #from bertalign.encoder import EncoderOpenAIEmbeddings
 from bertalign.encoder_local import EncoderLocal
 
-model_name = "LaBSE"
+model_name = "sentence-transformers/LaBSE"
 model = EncoderLocal(model_name)
 #model_name = "text-embedding-3-small"
 #model = EncoderOpenAIEmbeddings(model_name)

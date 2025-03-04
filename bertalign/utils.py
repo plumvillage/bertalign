@@ -1,5 +1,7 @@
 import re
-from underthesea import sent_tokenize as split_into_sentences_vi
+
+from nltk import PunktSentenceTokenizer
+vi_sentence_tokenizer = None
 
 def clean_text(text):
     clean_text = []
@@ -8,7 +10,7 @@ def clean_text(text):
     for line in lines:
         line = line.strip()
         if line:
-            line = re.sub('\s+', ' ', line)
+            line = re.sub(r'\s+', ' ', line)
             clean_text.append(line)
     return "\n".join(clean_text)
 
@@ -41,12 +43,12 @@ def split_into_sentences_en(text: str) -> list[str]:
     :rtype: list[str]
     """
     alphabets= "([A-Za-z])"
-    prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
-    suffixes = "(Inc|Ltd|Jr|Sr|Co)"
-    starters = "(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
-    acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
-    websites = "[.](com|net|org|io|gov|edu|me)"
-    digits = "([0-9])"
+    prefixes = r"(Mr|St|Mrs|Ms|Dr)[.]"
+    suffixes = r"(Inc|Ltd|Jr|Sr|Co)"
+    starters = r"(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+    acronyms = r"([A-Z][.][A-Z][.](?:[A-Z][.])?)"
+    websites = r"[.](com|net|org|io|gov|edu|me)"
+    digits = r"([0-9])"
     multiple_dots = r'\.{2,}'
     
     text = " " + text + "  "
@@ -56,7 +58,7 @@ def split_into_sentences_en(text: str) -> list[str]:
     text = re.sub(digits + "[.]" + digits,"\\1<prd>\\2",text)
     text = re.sub(multiple_dots, lambda match: "<prd>" * len(match.group(0)) + "<stop>", text)
     if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
-    text = re.sub("\s" + alphabets + "[.] "," \\1<prd> ",text)
+    text = re.sub(r"\s" + alphabets + "[.] "," \\1<prd> ",text)
     text = re.sub(acronyms+" "+starters,"\\1<stop> \\2",text)
     text = re.sub(alphabets + "[.]" + alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>\\3<prd>",text)
     text = re.sub(alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>",text)
@@ -132,7 +134,37 @@ def split_into_sentences_fr(text: str) -> list[str]:
     
     return sentences
 
-    
+
+#from https://github.com/undertheseanlp/underthesea/blob/main/underthesea/pipeline/sent_tokenize/__init__.py, we don't need all of underthesea, just this. underthesea has a lot of dependencies
+def _load_model():  
+	global sentence_tokenizer
+	if sentence_tokenizer is not None:
+		return
+	model_path = join(dirname(__file__), 'st_kiss-strunk-2006_2019_01_13.pkl')
+	with open(model_path, 'rb') as fs:
+		punkt_param = pickle.load(fs)
+
+	punkt_param.sent_starters = {}
+	abbrev_types = ['g.m.t', 'e.g', 'dr', 'dr', 'vs', "000", 'mr', 'mrs', 'prof', 'inc', 'tp', 'ts', 'ths',
+				'th', 'vs', 'tp', 'k.l', 'a.w.a.k.e', 't', 'a.i', '</i', 'g.w',
+				'ass',
+				'u.n.c.l.e', 't.e.s.t', 'ths', 'd.c', 've…', 'ts', 'f.t', 'b.b', 'z.e', 's.g', 'm.p',
+				'g.u.y',
+				'l.c', 'g.i', 'j.f', 'r.r', 'v.i', 'm.h', 'a.s', 'bs', 'c.k', 'aug', 't.d.q', 'b…', 'ph',
+				'j.k', 'e.l', 'o.t', 's.a']
+	abbrev_types.extend(string.ascii_uppercase)
+	for abbrev_type in abbrev_types:
+		punkt_param.abbrev_types.add(abbrev_type)
+	for abbrev_type in string.ascii_lowercase:
+		punkt_param.abbrev_types.add(abbrev_type)
+	sentence_tokenizer = PunktSentenceTokenizer(punkt_param)
+
+
+def split_into_sentences_vi(text: str) -> list[str]:
+    global sent_tokenizer
+    _load_model()
+    sentences = sentence_tokenizer.sentences_from_text(text)
+    return sentences
 
 def yield_overlaps(lines, num_overlaps):
     lines = [_preprocess_line(line) for line in lines]

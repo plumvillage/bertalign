@@ -1,19 +1,16 @@
 import numpy as np
+import os
 
 from dotenv import load_dotenv
 load_dotenv()
 
-import openai
-
 from bertalign.utils import yield_overlaps
-import tiktoken
 
-import concurrent.futures
 
-import os
+from huggingface_hub import InferenceClient
 
 from diskcache import Cache
-cache = Cache(os.path.join(os.getenv("GEMS_TOOLS_DATA_PATH"), "data_openai_embeddings_cache_timestamp_sync"))
+cache = Cache(os.path.join(os.getenv("GEMS_TOOLS_DATA_PATH"), "data_LaBSE_embeddings_cache_timestamp_sync"))
 
 def store_embedding_to_cache(text, embedding):
     text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
@@ -27,45 +24,22 @@ def has_embedding_in_cache(text):
     text = text.replace(" [CURSOR_POSITION] ", " ")
     return text in cache
 
-def batch_embeddings(texts, model_name="text-embedding-3-small"):
-    # Initialize the tokenizer
-    tokenizer = tiktoken.get_encoding("cl100k_base")
-    max_tokens_per_text = 8191
 
-    text_lists = []
-    current_text_list = []
-    current_token_count = 0
 
-    for text in texts:
-        text = text.replace(" [CURSOR_POSITION] ", " ")
-        text_token_count = len(tokenizer.encode(text))
-        if current_token_count + text_token_count > max_tokens_per_text:
-            text_lists.append(current_text_list)
-            current_text_list = []
-            current_token_count = 0
-        current_text_list.append(text)
-        current_token_count += text_token_count
-    text_lists.append(current_text_list)
+class EncoderLocal:
+    def __init__(self, model_name):
+        self.client = InferenceClient(
+            provider="hf-inference",
+            api_key=os.getenve("HUGGINGFACE_API_KEY")
+        )
 
-    # Get embeddings for each list of texts
-    embeddings = []
-    print(f"Getting embeddings for {len(texts)} texts, split into {len(text_lists)} batches")
-
-    def get_embeddings_for_text_list(text_list):
-        response = openai.Embedding.create(input=text_list, model=model_name)
-        return [item["embedding"] for item in response["data"]]
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(get_embeddings_for_text_list, text_list) for text_list in text_lists]
-        for future in concurrent.futures.as_completed(futures):
-            embeddings += future.result()
-
-    return embeddings
-
-class EncoderOpenAIEmbeddings:
-    def __init__(self, model_name="text-embedding-3-small"):
-        self.model_name = model_name
-
+    def get_embedding(self, texts):
+        response = self.client.predict(
+            model_id="sentence-transformers/LaBSE",
+            inputs=texts
+        )
+        return response[0]["embedding"]
+    
     def transform(self, sents, num_overlaps):
         overlaps = list(yield_overlaps(sents, num_overlaps))
         
@@ -82,8 +56,7 @@ class EncoderOpenAIEmbeddings:
         
         # Get embeddings for missing texts
         if missing_texts:
-            print(missing_texts)
-            missing_embeddings = batch_embeddings(missing_texts, self.model_name)
+            missing_embeddings = self.get_embedding(missing_texts)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
                 cached_embeddings.append(embedding)
