@@ -14,14 +14,17 @@ from diskcache import Cache
 cache = Cache(os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_LaBSE_embeddings_cache_timestamp_sync"))
 
 def store_embedding_to_cache(text, embedding):
+    text = text.replace("_", " ") #ignore special characters inserted by chapter parsing
     text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
     cache.set(text, embedding, expire=604800)  # 1 week
 
 def get_embedding_from_cache(text):
+    text = text.replace("_", " ") 
     text = text.replace(" [CURSOR_POSITION] ", " ")
     return cache[text]
 
 def has_embedding_in_cache(text):
+    text = text.replace("_", " ") 
     text = text.replace(" [CURSOR_POSITION] ", " ")
     return text in cache
 
