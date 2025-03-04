@@ -17,6 +17,39 @@ nltk.download('punkt') #directory specified by env NLTK_DATA=
 en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
 
+def add_non_splitting_tokens_to_text(text):
+    punctuation = {
+		'!': '<exclamation>', '?': '<question>', ',': '<comma>', ';': '<semicolon>',
+		':': '<colon>', '_': '<underscore>', '-': '<dash>',
+		'(': '<open_paren>', ')': '<close_paren>',
+		'[': '<open_bracket>', ']': '<close_bracket>'
+	}
+
+    pattern = re.compile(r'([' + re.escape(''.join(punctuation.keys())) + r'])(?=[' + re.escape(''.join(punctuation.keys())) + r'])')
+    
+    def replace_match(match):
+        return punctuation[match.group(0)]
+    
+    replaced_text = pattern.sub(replace_match, text)
+    return replaced_text
+
+def remove_splitting_tokens_from_list_of_sentences(sentences):
+	return [remove_splitting_tokens_from_text(sentence) for sentence in sentences]
+
+def remove_splitting_tokens_from_text(text):
+    punctuation = {
+        '<exclamation>': '!', '<question>': '?', '<comma>': ',', '<semicolon>': ';',
+        '<colon>': ':', '<underscore>': '_', '<dash>': '-',
+        '<open_paren>': '(', '<close_paren>': ')',
+        '<open_bracket>': '[', '<close_bracket>': ']'
+    }
+    pattern = re.compile('|'.join(map(re.escape, punctuation.keys())))
+    
+    def replace_match(match):
+        return punctuation[match.group(0)]
+    replaced_text = pattern.sub(replace_match, text)
+    return replaced_text
+
 def clean_text(text):
     clean_text = []
     text = text.strip()
@@ -29,12 +62,19 @@ def clean_text(text):
     return "\n".join(clean_text)
 
 def split_sents(text, lang):
+	text = add_non_splitting_tokens_to_text(text)
 	if lang == 'vietnamese':
-		return split_into_sentences_vi(text)
+		split_sentences = split_into_sentences_vi(text)
+		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+		return split_sentences
 	elif lang == 'english':
-		return split_into_sentences_en(text)
+		split_sentences = split_into_sentences_en(text)
+		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+		return split_sentences
 	elif lang == 'french':
-		return split_into_sentences_fr(text)
+		split_sentences = split_into_sentences_fr(text)
+		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+		return split_sentences
 	else:
 		raise Exception(f'The language {lang} is not suppored yet.')
     
