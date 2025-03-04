@@ -4,9 +4,18 @@ import pickle
 import string
 from os.path import join, dirname
 
+from dotenv import load_dotenv
+load_dotenv()
+
+import nltk
+import nltk.data
 
 from nltk import PunktSentenceTokenizer
 vi_sentence_tokenizer = None
+
+nltk.download('punkt') #directory specified by env NLTK_DATA=
+en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
 
 def clean_text(text):
     clean_text = []
@@ -31,110 +40,11 @@ def split_sents(text, lang):
     
 #from https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
 def split_into_sentences_en(text: str) -> list[str]:
-    """
-    Split the text into sentences.
-
-    If the text contains substrings "<prd>" or "<stop>", they would lead 
-    to incorrect splitting because they are used as markers for splitting.
-
-    :param text: text to be split into sentences
-    :type text: str
-
-    :return: list of sentences
-    :rtype: list[str]
-    """
-    alphabets= "([A-Za-z])"
-    prefixes = r"(Mr|St|Mrs|Ms|Dr)[.]"
-    suffixes = r"(Inc|Ltd|Jr|Sr|Co)"
-    starters = r"(Mr|Mrs|Ms|Dr|Prof|Capt|Cpt|Lt|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
-    acronyms = r"([A-Z][.][A-Z][.](?:[A-Z][.])?)"
-    websites = r"[.](com|net|org|io|gov|edu|me)"
-    digits = r"([0-9])"
-    multiple_dots = r'\.{2,}'
-    
-    text = " " + text + "  "
-    text = text.replace("\n"," ")
-    text = re.sub(prefixes,"\\1<prd>",text)
-    text = re.sub(websites,"<prd>\\1",text)
-    text = re.sub(digits + "[.]" + digits,"\\1<prd>\\2",text)
-    text = re.sub(multiple_dots, lambda match: "<prd>" * len(match.group(0)) + "<stop>", text)
-    if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
-    text = re.sub(r"\s" + alphabets + "[.] "," \\1<prd> ",text)
-    text = re.sub(acronyms+" "+starters,"\\1<stop> \\2",text)
-    text = re.sub(alphabets + "[.]" + alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>\\3<prd>",text)
-    text = re.sub(alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>",text)
-    text = re.sub(" "+suffixes+"[.] "+starters," \\1<stop> \\2",text)
-    text = re.sub(" "+suffixes+"[.]"," \\1<prd>",text)
-    text = re.sub(" " + alphabets + "[.]"," \\1<prd>",text)
-    if "”" in text: text = text.replace(".”","”.")
-    if "\"" in text: text = text.replace(".\"","\".")
-    if "!" in text: text = text.replace("!\"","\"!")
-    if "?" in text: text = text.replace("?\"","\"?")
-    text = text.replace(".",".<stop>")
-    text = text.replace("?","?<stop>")
-    text = text.replace("!","!<stop>")
-    text = text.replace("<prd>",".")
-    sentences = text.split("<stop>")
-    sentences = [s.strip() for s in sentences]
-    if sentences and not sentences[-1]: sentences = sentences[:-1]
-    return sentences
+    return en_sentence_tokenizer.tokenize(text)
 
 #todo: see if there is a better way - chatgpt made this for me
 def split_into_sentences_fr(text: str) -> list[str]:
-    """
-    Split the text into sentences in French.
-
-    This function accounts for common French abbreviations, honorifics, 
-    and sentence-ending punctuation to ensure proper sentence splitting.
-
-    :param text: text to be split into sentences
-    :type text: str
-
-    :return: list of sentences
-    :rtype: list[str]
-    """
-    alphabets = "([A-Za-zÀ-ÿ])"
-    prefixes = r"(M|Mme|Mlle|Dr|Pr|St)[.]"
-    suffixes = r"(Inc|Ltd|Jr|Sr|Co)"
-    starters = r"(Il|Elle|Ils|Elles|On|Nous|Vous|Ce|Cela|Mais|Cependant|Toutefois|Car|Puis|Donc|Or|Ainsi|D'ailleurs)"
-    acronyms = r"([A-Z][.][A-Z][.](?:[A-Z][.])?)"
-    websites = r"[.](com|net|org|io|gov|edu|me|fr)"
-    digits = "([0-9])"
-    multiple_dots = r'\.{2,}'
-
-    text = " " + text + "  "
-    text = text.replace("\n", " ")
-    text = re.sub(prefixes, r"\1<prd>", text)
-    text = re.sub(websites, r"<prd>\1", text)
-    text = re.sub(digits + r"[.]" + digits, r"\1<prd>\2", text)
-    text = re.sub(multiple_dots, lambda match: "<prd>" * len(match.group(0)) + "<stop>", text)
-    if "Ph.D" in text: text = text.replace("Ph.D.", "Ph<prd>D<prd>")
-    
-    text = re.sub(r"\s" + alphabets + r"[.] ", r" \1<prd> ", text)
-    text = re.sub(acronyms + r" " + starters, r"\1<stop> \2", text)
-    text = re.sub(alphabets + r"[.]" + alphabets + r"[.]" + alphabets + r"[.]", r"\1<prd>\2<prd>\3<prd>", text)
-    text = re.sub(alphabets + r"[.]" + alphabets + r"[.]", r"\1<prd>\2<prd>", text)
-    text = re.sub(r" " + suffixes + r"[.] " + starters, r" \1<stop> \2", text)
-    text = re.sub(r" " + suffixes + r"[.]", r" \1<prd>", text)
-    text = re.sub(r" " + alphabets + r"[.]", r" \1<prd>", text)
-    
-    # Handle quotes and punctuation
-    text = text.replace(".”", "”.")
-    text = text.replace(".\"", "\".")
-    text = text.replace("!\"", "\"!")
-    text = text.replace("?\"", "\"?")
-    
-    # Mark sentence endings
-    text = text.replace(".", ".<stop>")
-    text = text.replace("?", "?<stop>")
-    text = text.replace("!", "!<stop>")
-    text = text.replace("<prd>", ".")
-    
-    sentences = text.split("<stop>")
-    sentences = [s.strip() for s in sentences if s.strip()]
-    
-    return sentences
-
+    return fr_sentence_tokenizer.tokenize(text)
 
 #from https://github.com/undertheseanlp/underthesea/blob/main/underthesea/pipeline/sent_tokenize/__init__.py, we don't need all of underthesea, just this. underthesea has a lot of dependencies
 def _load_model():  
@@ -188,4 +98,8 @@ def _preprocess_line(line):
     if len(line) == 0:
         line = 'BLANK_LINE'
     return line
+
+if __name__ == "__main__":
+	text = "\"Test end with quote.\" Test 2"
+	print(split_into_sentences_en(text))
     
