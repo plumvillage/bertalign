@@ -1,5 +1,10 @@
 import re
 
+import pickle
+import string
+from os.path import join, dirname
+
+
 from nltk import PunktSentenceTokenizer
 vi_sentence_tokenizer = None
 
@@ -15,18 +20,14 @@ def clean_text(text):
     return "\n".join(clean_text)
 
 def split_sents(text, lang):
-    if lang in LANG.SPLITTER:
-        if lang == 'vi':
-            return split_into_sentences_vi(text)
-        elif lang == 'en':
-            return split_into_sentences_en(text)
-        elif lang == 'fr':
-            return split_into_sentences_fr(text)
-        else:
-            raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
-    	
-    else:
-        raise Exception('The language {} is not suppored yet.'.format(LANG.ISO[lang]))
+	if lang == 'vietnamese':
+		return split_into_sentences_vi(text)
+	elif lang == 'english':
+		return split_into_sentences_en(text)
+	elif lang == 'french':
+		return split_into_sentences_fr(text)
+	else:
+		raise Exception(f'The language {lang} is not suppored yet.')
     
 #from https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
 def split_into_sentences_en(text: str) -> list[str]:
@@ -137,8 +138,8 @@ def split_into_sentences_fr(text: str) -> list[str]:
 
 #from https://github.com/undertheseanlp/underthesea/blob/main/underthesea/pipeline/sent_tokenize/__init__.py, we don't need all of underthesea, just this. underthesea has a lot of dependencies
 def _load_model():  
-	global sentence_tokenizer
-	if sentence_tokenizer is not None:
+	global vi_sentence_tokenizer
+	if vi_sentence_tokenizer is not None:
 		return
 	model_path = join(dirname(__file__), 'st_kiss-strunk-2006_2019_01_13.pkl')
 	with open(model_path, 'rb') as fs:
@@ -157,13 +158,13 @@ def _load_model():
 		punkt_param.abbrev_types.add(abbrev_type)
 	for abbrev_type in string.ascii_lowercase:
 		punkt_param.abbrev_types.add(abbrev_type)
-	sentence_tokenizer = PunktSentenceTokenizer(punkt_param)
+	vi_sentence_tokenizer = PunktSentenceTokenizer(punkt_param)
 
 
 def split_into_sentences_vi(text: str) -> list[str]:
     global sent_tokenizer
     _load_model()
-    sentences = sentence_tokenizer.sentences_from_text(text)
+    sentences = vi_sentence_tokenizer.sentences_from_text(text)
     return sentences
 
 def yield_overlaps(lines, num_overlaps):
@@ -188,187 +189,3 @@ def _preprocess_line(line):
         line = 'BLANK_LINE'
     return line
     
-class LANG:
-    SPLITTER = {
-        'en': 'English',
-        'fr': 'French',
-        'vi': 'Vietnamese',
-    }
-    ISO = {
-		'aa': 'Afar',
-		'ab': 'Abkhaz',
-		'af': 'Afrikaans',
-		'ak': 'Akan',
-		'am': 'Amharic',
-		'an': 'Aragonese',
-		'ar': 'Arabic',
-		'as': 'Assamese',
-		'av': 'Avaric',
-		'ay': 'Aymara',
-		'az': 'Azerbaijani',
-		'ba': 'Bashkir',
-		'be': 'Belarusian',
-		'bg': 'Bulgarian',
-		'bh': 'Bihari',
-		'bi': 'Bislama',
-		'bm': 'Bambara',
-		'bn': 'Bengali',
-		'bo': 'Tibetan',
-		'br': 'Breton',
-		'bs': 'Bosnian',
-		'ca': 'Catalan',
-		'ce': 'Chechen',
-		'ch': 'Chamorro',
-		'co': 'Corsican',
-		'cr': 'Cree',
-		'cs': 'Czech',
-		'cv': 'Chuvash',
-		'cy': 'Welsh',
-		'da': 'Danish',
-		'de': 'German',
-		'dv': 'Divehi',
-		'dz': 'Dzongkha',
-		'ee': 'Ewe',
-		'el': 'Greek',
-		'en': 'English',
-		'es': 'Spanish',
-		'et': 'Estonian',
-		'eu': 'Basque',
-		'fa': 'Persian',
-		'ff': 'Fula',
-		'fi': 'Finnish',
-		'fj': 'Fijian',
-		'fo': 'Faroese',
-		'fr': 'French',
-		'fy': 'Western Frisian',
-		'ga': 'Irish',
-		'gd': 'Scottish Gaelic',
-		'gl': 'Galician',
-		'gn': 'Guaraní',
-		'gu': 'Gujarati',
-		'gv': 'Manx',
-		'ha': 'Hausa',
-		'he': 'Hebrew',
-		'hi': 'Hindi',
-		'ho': 'Hiri Motu',
-		'hr': 'Croatian',
-		'ht': 'Haitian',
-		'hu': 'Hungarian',
-		'hy': 'Armenian',
-		'hz': 'Herero',
-		'id': 'Indonesian',
-		'ig': 'Igbo',
-		'ii': 'Nuosu',
-		'ik': 'Inupiaq',
-		'io': 'Ido',
-		'is': 'Icelandic',
-		'it': 'Italian',
-		'iu': 'Inuktitut',
-		'ja': 'Japanese',
-		'jv': 'Javanese',
-		'ka': 'Georgian',
-		'kg': 'Kongo',
-		'ki': 'Kikuyu',
-		'kj': 'Kwanyama',
-		'kk': 'Kazakh',
-		'kl': 'Kalaallisut',
-		'km': 'Khmer',
-		'kn': 'Kannada',
-		'ko': 'Korean',
-		'kr': 'Kanuri',
-		'ks': 'Kashmiri',
-		'ku': 'Kurdish',
-		'kv': 'Komi',
-		'kw': 'Cornish',
-		'ky': 'Kyrgyz',
-		'lb': 'Luxembourgish',
-		'lg': 'Ganda',
-		'li': 'Limburgish',
-		'ln': 'Lingala',
-		'lo': 'Lao',
-		'lt': 'Lithuanian',
-		'lu': 'Luba-Katanga',
-		'lv': 'Latvian',
-		'mg': 'Malagasy',
-		'mh': 'Marshallese',
-		'mi': 'Māori',
-		'mk': 'Macedonian',
-		'ml': 'Malayalam',
-		'mn': 'Mongolian',
-		'mr': 'Marathi',
-		'ms': 'Malay',
-		'mt': 'Maltese',
-		'my': 'Burmese',
-		'na': 'Nauru',
-		'nb': 'Norwegian Bokmål',
-		'nd': 'North Ndebele',
-		'ne': 'Nepali',
-		'ng': 'Ndonga',
-		'nl': 'Dutch',
-		'nn': 'Norwegian Nynorsk',
-		'no': 'Norwegian',
-		'nr': 'South Ndebele',
-		'nv': 'Navajo',
-		'ny': 'Chichewa',
-		'oc': 'Occitan',
-		'oj': 'Ojibwe',
-		'om': 'Oromo',
-		'or': 'Oriya',
-		'os': 'Ossetian',
-		'pa': 'Panjabi',
-		'pl': 'Polish',
-		'ps': 'Pashto',
-		'pt': 'Portuguese',
-		'qu': 'Quechua',
-		'rm': 'Romansh',
-		'rn': 'Kirundi',
-		'ro': 'Romanian',
-		'ru': 'Russian',
-		'rw': 'Kinyarwanda',
-		'sa': 'Sanskrit',
-		'sc': 'Sardinian',
-		'sd': 'Sindhi',
-		'se': 'Northern Sami',
-		'sg': 'Sango',
-		'si': 'Sinhala',
-		'sk': 'Slovak',
-		'sl': 'Slovenian',
-		'sm': 'Samoan',
-		'sn': 'Shona',
-		'so': 'Somali',
-		'sq': 'Albanian',
-		'sr': 'Serbian',
-		'ss': 'Swati',
-		'st': 'Southern Sotho',
-		'su': 'Sundanese',
-		'sv': 'Swedish',
-		'sw': 'Swahili',
-		'ta': 'Tamil',
-		'te': 'Telugu',
-		'tg': 'Tajik',
-		'th': 'Thai',
-		'ti': 'Tigrinya',
-		'tk': 'Turkmen',
-		'tl': 'Tagalog',
-		'tn': 'Tswana',
-		'to': 'Tonga',
-		'tr': 'Turkish',
-		'ts': 'Tsonga',
-		'tt': 'Tatar',
-		'tw': 'Twi',
-		'ty': 'Tahitian',
-		'ug': 'Uighur',
-		'uk': 'Ukrainian',
-		'ur': 'Urdu',
-		'uz': 'Uzbek',
-		've': 'Venda',
-		'vi': 'Vietnamese',
-		'wa': 'Walloon',
-		'wo': 'Wolof',
-		'xh': 'Xhosa',
-		'yi': 'Yiddish',
-		'yo': 'Yoruba',
-		'za': 'Zhuang',
-		'zh': 'Chinese',
-		'zu': 'Zulu',
-    }
