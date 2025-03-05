@@ -14,7 +14,7 @@ from nltk import PunktSentenceTokenizer
 vi_sentence_tokenizer = None
 
 nltk.download('punkt') #directory specified by env NLTK_DATA=
-nltk.download('punkt_tab')
+nltk.download('punkt_tab') 
 en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
 
