@@ -63,21 +63,22 @@ def clean_text(text):
     return "\n".join(clean_text)
 
 def split_sents(text, lang):
-	text = add_non_splitting_tokens_to_text(text)
-	if lang == 'vietnamese':
-		split_sentences = split_into_sentences_vi(text)
-		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
-		return split_sentences
-	elif lang == 'english':
-		split_sentences = split_into_sentences_en(text)
-		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
-		return split_sentences
-	elif lang == 'french':
-		split_sentences = split_into_sentences_fr(text)
-		split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
-		return split_sentences
-	else:
-		raise Exception(f'The language {lang} is not suppored yet.')
+    lang = lang.replace('summarized_', '').lower()
+    text = add_non_splitting_tokens_to_text(text)
+    if lang == 'vietnamese':
+        split_sentences = split_into_sentences_vi(text)
+        split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+        return split_sentences
+    elif lang == 'english':
+        split_sentences = split_into_sentences_en(text)
+        split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+        return split_sentences
+    elif lang == 'french':
+        split_sentences = split_into_sentences_fr(text)
+        split_sentences = remove_splitting_tokens_from_list_of_sentences(split_sentences)
+        return split_sentences
+    else:
+        raise Exception(f'The language {lang} is not suppored yet.')
     
 #from https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
 def split_into_sentences_en(text: str) -> list[str]:
