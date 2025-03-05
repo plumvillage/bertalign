@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import re
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -26,12 +27,38 @@ def has_embedding_in_cache(text):
     return text in cache
 
 def replace_excluded_from_embedding(text):
-    text = text.replace(" [CURSOR_POSITION] ", " ") #ingnore cursor_position for embedding
-    text = text.replace("[CURSOR_POSITION] ", " ") #start of sentence
-    text = text.replace(" [CURSOR_POSITION]", " ") #end of sentence
+    text = text.replace("[CURSOR_POSITION]", " ") #ingnore cursor_position for embedding
+    text = text.replace("[PARAGRAPH_BREAK]", " ") #ignore paragraph_break for embedding
     text = text.replace("_", " ") #ignore special characters inserted by chapter parsing
+    text = replace_nbsp_with_space(text)
+    text = reduce_whitespace_to_single_space(text)
+    text = remove_unicode_control_chars(text)
+    text = normalize_line_endings(text)
     text = text.strip()
     return text
+
+def replace_nbsp_with_space(s):
+    if '\xa0' in s:
+        print(f"{os.path.basename(__file__)}: Replacing non-breaking spaces with regular spaces. Non-breaking spaces are not supported.")
+    return s.replace('\xa0', ' ')
+
+def reduce_whitespace_to_single_space(s):
+    if '\u3000' in s:
+        print(f"{os.path.basename(__file__)}: Replacing IDEOGRAPHIC SPACE spaces with regular spaces. IDEOGRAPHIC SPACE not supported.")
+    s = s.replace('\u3000', ' ')
+    return re.sub(r'\s+', ' ', s)
+
+def normalize_line_endings(s):
+    return s.replace('\r\n', '\n').replace('\r', '\n')
+
+def remove_unicode_control_chars(s): #some old human made transcripts have strange garbage in them.
+    # Regular expression to match Unicode control characters, excluding newlines (\n) and carriage returns (\r)
+    control_chars_regex = r'[\u0000-\u0009\u000B-\u000C\u000E-\u001F\u007F-\u009F]'
+    
+    # Remove control characters, preserving newlines and carriage returns
+    cleaned_string = re.sub(control_chars_regex, ' ', s)
+    
+    return cleaned_string
 
 class EncoderLocal:
     def __init__(self, model_name):
