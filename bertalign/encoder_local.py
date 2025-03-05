@@ -57,8 +57,6 @@ class EncoderLocal:
         
         # Get embeddings for missing texts
         if missing_texts:
-            for text in missing_texts:
-                print(f"Missing: {replace_excluded_from_embedding(text)}")
             missing_embeddings = self.model.encode(missing_texts)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
