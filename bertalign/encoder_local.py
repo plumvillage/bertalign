@@ -87,17 +87,13 @@ class EncoderLocal:
             missing_embeddings = self.model.encode(missing_texts)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
-                cached_embeddings.append(embedding)
         
-        # Ensure the order of embeddings matches the order of overlaps
         embeddings = []
-        cache_index = 0
         for text in overlaps:
             if has_embedding_in_cache(text):
-                embeddings.append(cached_embeddings[cache_index])
-                cache_index += 1
+                embeddings.append(get_embedding_from_cache(text)) #read them all back to have them in the same order as overlaps
             else:
-                embeddings.append(get_embedding_from_cache(text))
+                raise Exception(f"Missing embedding after cache filling, this should not happen, for text: {text}")
         
         sent_vecs = np.array(embeddings)
         embedding_dim = sent_vecs.shape[1]
