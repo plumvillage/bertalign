@@ -9,6 +9,7 @@ import openai
 
 from sentence_transformers import SentenceTransformer
 from bertalign.utils import yield_overlaps
+from bertalign.encoder_fly import get_embeddings
 import tiktoken
 
 from diskcache import Cache
@@ -84,7 +85,17 @@ class EncoderLocal:
         
         # Get embeddings for missing texts
         if missing_texts:
-            missing_embeddings = self.model.encode(missing_texts)
+            if len(missing_texts) > 100:
+                try:
+                    print("getting embeddings from fly gpu for quantity > 100")
+                    missing_embeddings = get_embeddings(missing_texts) #use fly gpu for large batches
+                except Exception as e:
+                    print(f"Error getting embeddings from fly gpu: {e}")
+                    print("falling back to local cpu")
+                    missing_embeddings = self.model.encode(missing_texts) #fallback to local cpu
+            else:
+                print("getting embeddings from local cpu for quantity < 100")
+                missing_embeddings = self.model.encode(missing_texts) #small batches are faster on cpu (gpu takes about 5 sec to start)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
         
