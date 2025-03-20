@@ -35,6 +35,8 @@ def get_embeddings(texts: Union[List[str], str]) -> List[List[float]]:
     auth = None
     if EMBEDDING_API_BASIC_AUTH_USERNAME and EMBEDDING_API_BASIC_AUTH_PASSWORD:
         auth = (EMBEDDING_API_BASIC_AUTH_USERNAME, EMBEDDING_API_BASIC_AUTH_PASSWORD)
+    else:
+        raise Exception("EMBEDDING_API_BASIC_AUTH_USERNAME and EMBEDDING_API_BASIC_AUTH_PASSWORD must be set")
     
     # Make the API call
     try:
