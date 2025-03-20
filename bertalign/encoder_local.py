@@ -17,11 +17,15 @@ cache = Cache(os.path.join(os.getenv("GEMS_DATA_CACHE_PATH"), "data_LaBSE_embedd
 
 def store_embedding_to_cache(text, embedding):
     text = replace_excluded_from_embedding(text)
+    # Ensure embedding is float32 before storing
+    embedding = np.array(embedding, dtype=np.float32)
     cache.set(text, embedding, expire=604800)  # 1 week
 
 def get_embedding_from_cache(text):
     text = replace_excluded_from_embedding(text)
-    return cache[text]
+    # Convert to float32 when retrieving from cache
+    embedding = cache[text]
+    return np.array(embedding, dtype=np.float32)
 
 def has_embedding_in_cache(text):
     text = replace_excluded_from_embedding(text)
@@ -89,13 +93,19 @@ class EncoderLocal:
                 try:
                     print("getting embeddings from fly gpu for quantity > 100")
                     missing_embeddings = get_embeddings(missing_texts) #use fly gpu for large batches
+                    # Ensure embeddings are float32
+                    missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
                 except Exception as e:
                     print(f"Error getting embeddings from fly gpu: {e}")
                     print("falling back to local cpu")
                     missing_embeddings = self.model.encode(missing_texts) #fallback to local cpu
+                    # Ensure embeddings are float32
+                    missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
             else:
                 print("getting embeddings from local cpu for quantity < 100")
                 missing_embeddings = self.model.encode(missing_texts) #small batches are faster on cpu (gpu takes about 5 sec to start)
+                # Ensure embeddings are float32
+                missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
         
@@ -106,7 +116,7 @@ class EncoderLocal:
             else:
                 raise Exception(f"Missing embedding after cache filling, this should not happen, for text: {text}")
         
-        sent_vecs = np.array(embeddings)
+        sent_vecs = np.array(embeddings, dtype=np.float32)  # Explicitly set dtype to float32
         embedding_dim = sent_vecs.shape[1]
         sent_vecs.resize((num_overlaps, len(sents), embedding_dim))
 
