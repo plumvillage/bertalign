@@ -2,10 +2,20 @@ import numpy as np
 
 import csv
 
-from bertalign.corelib import *
-from bertalign.utils import *
-#from bertalign.encoder import EncoderOpenAIEmbeddings
-from bertalign.encoder_local import EncoderLocal
+try:
+    from bertalign.corelib import *
+except ModuleNotFoundError:
+    from corelib import * #fixme - how do I do this right?
+
+try:
+    from bertalign.utils import *
+except ModuleNotFoundError:
+    from utils import *
+
+try:
+    from bertalign.encoder_local import EncoderLocal
+except ModuleNotFoundError:
+    from encoder_local import EncoderLocal
 
 model_name = "sentence-transformers/LaBSE"
 model = EncoderLocal(model_name)
