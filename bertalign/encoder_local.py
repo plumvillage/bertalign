@@ -8,8 +8,14 @@ load_dotenv()
 import openai
 
 from sentence_transformers import SentenceTransformer
-from bertalign.utils import yield_overlaps
-from bertalign.encoder_fly import get_embeddings
+
+try:
+    from bertalign.utils import yield_overlaps
+    from bertalign.encoder_fly import get_embeddings
+except ModuleNotFoundError:
+    from utils import yield_overlaps
+    from encoder_fly import get_embeddings
+
 import tiktoken
 
 from diskcache import Cache
@@ -92,18 +98,18 @@ class EncoderLocal:
             if len(missing_texts) > 100:
                 try:
                     print("getting embeddings from fly gpu for quantity > 100")
-                    missing_embeddings = get_embeddings(missing_texts) #use fly gpu for large batches
+                    missing_embeddings = get_embeddings(missing_texts) #use fly gpu for large qty
                     # Ensure embeddings are float32
                     missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
                 except Exception as e:
                     print(f"Error getting embeddings from fly gpu: {e}")
                     print("falling back to local cpu")
-                    missing_embeddings = self.model.encode(missing_texts) #fallback to local cpu
+                    missing_embeddings = self.model.encode(missing_texts, show_progress_bar=True) #fallback to local cpu
                     # Ensure embeddings are float32
                     missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
             else:
                 print("getting embeddings from local cpu for quantity < 100")
-                missing_embeddings = self.model.encode(missing_texts) #small batches are faster on cpu (gpu takes about 5 sec to start)
+                missing_embeddings = self.model.encode(missing_texts, show_progress_bar=True) #small qty are faster on cpu (gpu takes about 5 sec to start)
                 # Ensure embeddings are float32
                 missing_embeddings = np.array(missing_embeddings, dtype=np.float32)
             for text, embedding in zip(missing_texts, missing_embeddings):
