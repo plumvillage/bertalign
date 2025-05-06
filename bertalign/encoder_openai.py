@@ -3,7 +3,9 @@ import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
 
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 
 from bertalign.utils import yield_overlaps
 import tiktoken
@@ -52,8 +54,8 @@ def batch_embeddings(texts, model_name="text-embedding-3-small"):
     print(f"Getting embeddings for {len(texts)} texts, split into {len(text_lists)} batches")
 
     def get_embeddings_for_text_list(text_list):
-        response = openai.Embedding.create(input=text_list, model=model_name)
-        return [item["embedding"] for item in response["data"]]
+        response = client.embeddings.create(input=text_list, model=model_name)
+        return [item["embedding"] for item in response.data]
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(get_embeddings_for_text_list, text_list) for text_list in text_lists]
@@ -68,7 +70,7 @@ class EncoderOpenAIEmbeddings:
 
     def transform(self, sents, num_overlaps):
         overlaps = list(yield_overlaps(sents, num_overlaps))
-        
+
         # Check cache for existing embeddings
         cached_embeddings = []
         missing_texts = []
@@ -79,7 +81,7 @@ class EncoderOpenAIEmbeddings:
                 missing_texts.append(text)
 
         print(f"Found {len(cached_embeddings)} cached embeddings, missing {len(missing_texts)}")
-        
+
         # Get embeddings for missing texts
         if missing_texts:
             print(missing_texts)
@@ -87,7 +89,7 @@ class EncoderOpenAIEmbeddings:
             for text, embedding in zip(missing_texts, missing_embeddings):
                 store_embedding_to_cache(text, embedding)
                 cached_embeddings.append(embedding)
-        
+
         # Ensure the order of embeddings matches the order of overlaps
         embeddings = []
         cache_index = 0
@@ -97,7 +99,7 @@ class EncoderOpenAIEmbeddings:
                 cache_index += 1
             else:
                 embeddings.append(get_embedding_from_cache(text))
-        
+
         sent_vecs = np.array(embeddings)
         embedding_dim = sent_vecs.shape[1]
         sent_vecs.resize((num_overlaps, len(sents), embedding_dim))
