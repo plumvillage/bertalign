@@ -11,12 +11,20 @@ import nltk
 import nltk.data
 
 from nltk import PunktSentenceTokenizer
-vi_sentence_tokenizer = None
 
-nltk.download('punkt') #directory specified by env NLTK_DATA=
-nltk.download('punkt_tab') 
-en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
+vi_sentence_tokenizer = None
+en_sentence_tokenizer = None
+fr_sentence_tokenizer = None
+
+# do this only when needed, it's slow to start
+def init_nltk():
+    global en_sentence_tokenizer
+    global fr_sentence_tokenizer
+    
+    nltk.download('punkt') #directory specified by env NLTK_DATA=
+    nltk.download('punkt_tab') 
+    en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+    fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
 
 def add_non_splitting_tokens_to_text(text):
     punctuation = {
