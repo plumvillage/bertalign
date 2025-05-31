@@ -12,13 +12,8 @@ try:
 except ModuleNotFoundError:
     from utils import *
 
-try:
-    from bertalign.encoder_local import EncoderLocal
-except ModuleNotFoundError:
-    from encoder_local import EncoderLocal
-
 model_name = "sentence-transformers/LaBSE"
-model = EncoderLocal(model_name)
+model = None
 #model_name = "text-embedding-3-small"
 #model = EncoderOpenAIEmbeddings(model_name)
 
@@ -36,6 +31,16 @@ class Bertalign:
                  src_lang=None,
                  tgt_lang=None,
                ):
+        
+        global model
+        if model is None:
+            try:
+                from bertalign.encoder_local import EncoderLocal
+            except ModuleNotFoundError:
+                from encoder_local import EncoderLocal
+            model = EncoderLocal(model_name)
+
+        init_nltk()
         
         self.max_align = max_align
         self.top_k = top_k
