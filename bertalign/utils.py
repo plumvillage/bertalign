@@ -16,8 +16,15 @@ vi_sentence_tokenizer = None
 en_sentence_tokenizer = None
 fr_sentence_tokenizer = None
 
+nltk_initialized = False
+
 # do this only when needed, it's slow to start
 def init_nltk():
+    global nltk_initialized
+    if nltk_initialized:
+        return
+    nltk_initialized = True
+    
     global en_sentence_tokenizer
     global fr_sentence_tokenizer
     
