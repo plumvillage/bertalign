@@ -44,7 +44,8 @@ def get_embeddings(texts: Union[List[str], str]) -> List[List[float]]:
             f"{EMBEDDING_API_URL}/v1/embeddings",
             headers=headers,
             json=data,
-            auth=auth
+            auth=auth,
+            timeout=30
         )
         
         # Raise an exception for HTTP errors
