@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 
 model_name = "sentence-transformers/LaBSE"
 model = None
+_nltk_initialized = False
 #model_name = "text-embedding-3-small"
 #model = EncoderOpenAIEmbeddings(model_name)
 
@@ -34,13 +35,22 @@ class Bertalign:
         
         global model
         if model is None:
-            try:
-                from bertalign.encoder_local import EncoderLocal
-            except ModuleNotFoundError:
-                from encoder_local import EncoderLocal
-            model = EncoderLocal(model_name)
+            # try:
+            #     from bertalign.encoder_local import EncoderLocal
+            # except ModuleNotFoundError:
+            #     from encoder_local import EncoderLocal
+            # model = EncoderLocal(model_name)
 
-        init_nltk()
+            try:
+                from bertalign.encoder_hf_api import EncoderHfApi
+            except ModuleNotFoundError:
+                from encoder_hf_api import EncoderHfApi
+            model = EncoderHfApi(model_name)
+
+        global _nltk_initialized
+        if not _nltk_initialized:
+            init_nltk()
+            _nltk_initialized = True
         
         self.max_align = max_align
         self.top_k = top_k
