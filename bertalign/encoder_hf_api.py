@@ -98,7 +98,6 @@ class EncoderHfApi:
         print(f"Hugging Face Inference API using model: {self.model_name}")
 
     def _query_embeddings(self, sentences: List[str]) -> List[List[float]]:
-        print(f"Querying embeddings for {len(sentences)} sentences from HF API")
         headers = {"Authorization": f"Bearer {self.hf_api_key}"}
         payload = {"inputs": {"sentences": sentences}}
         response = requests.post(self.api_url, headers=headers, json=payload, timeout=120)
