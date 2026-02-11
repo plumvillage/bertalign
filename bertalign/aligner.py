@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 import csv
 
@@ -35,17 +36,19 @@ class Bertalign:
         
         global model
         if model is None:
-            # try:
-            #     from bertalign.encoder_local import EncoderLocal
-            # except ModuleNotFoundError:
-            #     from encoder_local import EncoderLocal
-            # model = EncoderLocal(model_name)
-
-            try:
-                from bertalign.encoder_hf_api import EncoderHfApi
-            except ModuleNotFoundError:
-                from encoder_hf_api import EncoderHfApi
-            model = EncoderHfApi(model_name)
+            environment = os.environ.get("ENVIRONMENT", "").upper()
+            if environment == "PRODUCTION":
+                try:
+                    from bertalign.encoder_hf_api import EncoderHfApi
+                except ModuleNotFoundError:
+                    from encoder_hf_api import EncoderHfApi
+                model = EncoderHfApi(model_name)
+            else:
+                try:
+                    from bertalign.encoder_local import EncoderLocal
+                except ModuleNotFoundError:
+                    from encoder_local import EncoderLocal
+                model = EncoderLocal(model_name)
 
         global _nltk_initialized
         if not _nltk_initialized:
