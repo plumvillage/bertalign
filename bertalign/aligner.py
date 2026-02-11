@@ -36,6 +36,7 @@ class Bertalign:
         
         global model
         if model is None:
+            print("Initializing model")
             environment = os.environ.get("ENVIRONMENT", "").upper()
             if environment == "PRODUCTION":
                 try:
