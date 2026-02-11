@@ -100,7 +100,7 @@ class EncoderHfApi:
     def _query_embeddings(self, sentences: List[str]) -> List[List[float]]:
         headers = {"Authorization": f"Bearer {self.hf_api_key}"}
         payload = {"inputs": {"sentences": sentences}}
-        response = requests.post(self.api_url, headers=headers, json=payload, timeout=120)
+        response = requests.post(self.api_url, headers=headers, json=payload, timeout=300)
         response.raise_for_status()
         data = response.json()
         if not isinstance(data, list):
