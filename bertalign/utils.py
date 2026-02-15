@@ -28,8 +28,6 @@ def init_nltk():
     global en_sentence_tokenizer
     global fr_sentence_tokenizer
     
-    nltk.download('punkt') #directory specified by env NLTK_DATA=
-    nltk.download('punkt_tab') 
     en_sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
     fr_sentence_tokenizer = nltk.data.load('tokenizers/punkt/french.pickle')
 
