@@ -1,2 +1,3 @@
 bertalign/__pycache__/
 bertalign/.env
+*.pyc
